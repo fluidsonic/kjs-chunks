@@ -2,6 +2,7 @@ import kotlinx.browser.window
 import kotlin.js.Promise
 
 
+// @JsExport is needed or else dead code elimination will remove this.
 @JsExport
 fun main() {
     printToDocument("index!")
