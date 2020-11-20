@@ -1,0 +1,15 @@
+*.iml
+/.idea/**
+!/.idea/codeStyles/
+!/.idea/codeStyles/**
+!/.idea/dictionaries/
+!/.idea/dictionaries/**
+!/.idea/inspectionProfiles/
+!/.idea/inspectionProfiles/**
+!/.idea/runConfigurations/
+!/.idea/runConfigurations/**
+!/.idea/gradle.xml
+.DS_Store
+.gradle
+build
+out
