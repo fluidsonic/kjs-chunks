@@ -1,15 +1,16 @@
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinJsCompilerType
 import org.jetbrains.kotlin.gradle.targets.js.ir.JsIrBinary
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin
 import org.jetbrains.kotlin.gradle.targets.js.npm.npmProject
 
 plugins {
-    id("org.jetbrains.kotlin.js") version "1.4.20-RC"
+    kotlin("js") version "1.5.21"
 }
 
 allprojects {
     repositories {
-        jcenter()
         mavenCentral()
     }
 }
@@ -19,9 +20,17 @@ dependencies {
     implementation(project(":index"))
 }
 
+// https://youtrack.jetbrains.com/issue/KT-48273
+rootProject.plugins.withType(NodeJsRootPlugin::class.java) {
+    rootProject.the<NodeJsRootExtension>().versions.webpackDevServer.version = "4.0.0"
+}
+
 kotlin {
     js(KotlinJsCompilerType.IR) {
-        compilations.named(KotlinCompilation.MAIN_COMPILATION_NAME) {
+        val mainCompilation = compilations.getByName(KotlinCompilation.MAIN_COMPILATION_NAME)
+        val copyTaskName = "copy${mainCompilation.compileKotlinTaskName.removePrefix("compile")}ToRootProject"
+
+        mainCompilation.apply {
             val compilation = this
             val compileKotlinTask = compileKotlinTask
             val npmModuleIndex = compilation.npmProject.dir.resolve(compilation.npmProject.main)
@@ -33,25 +42,40 @@ kotlin {
                     // Instead simply create separate JS files per module & dependency (in /build/classes/main/)
 
                     kotlinOptions {
+                        outputFile = checkNotNull(outputFile) + "/index.js"
+
                         freeCompilerArgs = freeCompilerArgs
                             .filter { it != "-Xir-produce-klib-dir" }
                             .plus(listOf("-Xir-per-module", "-Xir-produce-js"))
                     }
                 }
-                .finalizedBy(tasks.create<Copy>("copy${compileKotlinTaskName.removePrefix("compile")}ToRootProject") {
+                .finalizedBy(tasks.create<Copy>(copyTaskName) {
                     // Copy the separate JS files to the expected location (from /build/classes/main/ to /build/js/packages/kjs-chunks/kotlin/)
 
                     from(compileKotlinTask) {
-                        exclude { it.file == compileKotlinTask.outputFile }
+                        exclude { it.file == compileKotlinTask.outputFileProperty.get() }
                     }
-                    from(compileKotlinTask.outputFile) {
+                    from(compileKotlinTask.outputFileProperty) {
                         rename { npmModuleIndex.name }
                     }
                     into(npmModuleDir)
                 })
         }
 
-        browser()
+        browser {
+            webpackTask {
+                dependsOn(copyTaskName)
+
+                outputFileName = "assets/[name].[contenthash].js"
+                sourceMaps = false
+            }
+
+            runTask {
+                dependsOn(copyTaskName)
+
+                outputFileName = "assets/index.js"
+            }
+        }
 
         binaries.executable().forEach { binary ->
             // Looks like we don't need this task anymore?

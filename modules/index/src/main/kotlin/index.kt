@@ -4,6 +4,7 @@ import kotlin.js.Promise
 
 // @JsExport is needed or else dead code elimination will remove this.
 @JsExport
+@OptIn(ExperimentalJsExport::class)
 fun main() {
     printToDocument("index!")
     printToDocument("Loading dynamic chunk in 5 seconds…")
