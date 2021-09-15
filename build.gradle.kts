@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin
 import org.jetbrains.kotlin.gradle.targets.js.npm.npmProject
 
 plugins {
-    kotlin("js") version "1.5.21"
+    kotlin("js") version "1.5.30"
 }
 
 allprojects {
@@ -18,6 +18,8 @@ allprojects {
 dependencies {
     implementation(project(":dynamic"))
     implementation(project(":index"))
+
+    implementation(devNpm("html-webpack-plugin", "~5.3.1"))
 }
 
 // https://youtrack.jetbrains.com/issue/KT-48273
@@ -52,8 +54,13 @@ kotlin {
                 .finalizedBy(tasks.create<Copy>(copyTaskName) {
                     // Copy the separate JS files to the expected location (from /build/classes/main/ to /build/js/packages/kjs-chunks/kotlin/)
 
+                    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
                     from(compileKotlinTask) {
-                        exclude { it.file == compileKotlinTask.outputFileProperty.get() }
+                        exclude {
+                            println(it.file.toPath().toString() + " .. " + npmModuleIndex.name)
+                            ;it.file == compileKotlinTask.outputFileProperty.get()
+                        }
                     }
                     from(compileKotlinTask.outputFileProperty) {
                         rename { npmModuleIndex.name }

@@ -10,7 +10,7 @@ fun main() {
     printToDocument("Loading dynamic chunk in 5 seconds…")
 
     window.setTimeout({
-        import<DynamicModule>("./kotlin_kjs_chunks_dynamic").then { module ->
+        import<DynamicModule>("./kjs-chunks-dynamic").then { module ->
             module.printDynamic()
         }
     }, 5000)
