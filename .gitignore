@@ -9,6 +9,7 @@
 !/.idea/runConfigurations/
 !/.idea/runConfigurations/**
 !/.idea/gradle.xml
+/kotlin-js-store
 .DS_Store
 .gradle
 build
